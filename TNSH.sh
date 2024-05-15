@@ -7,7 +7,7 @@
 #   |_| |_| |___|___|_|___|__|__|_____|  |_____|_____|__|__|_____|_____|
 #                                                                      
 # TrueNAS SCALE Helper by Daniel Ketel, 2024
-# For latest version visit https://github.com/kage-chan/HomeLab/TNSH
+# For latest version visit https://github.com/kage-chan/TNSH
 # TrueNAS® is a registered Trademark of IXsystems, Inc.
 #
 
@@ -46,7 +46,7 @@ printHeader () {
 	echo "                               Helper  v"$version"                           ";
 	echo "";
 	echo " 2024, Daniel Ketel. For latest version visit ";
-	echo " https://github.com/kage-chan/HomeLab/TNSH";
+	echo " https://github.com/kage-chan/TNSH";
 	echo "";
 	
 	if $initExists ; then
