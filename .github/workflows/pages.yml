@@ -8,10 +8,7 @@ name: Deploy Jekyll site to Pages
 
 on:
   push:
-    branches:
-      - "main"
-  paths:
-      - "docs/**"
+    branches: ["main"]
 
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
@@ -30,10 +27,10 @@ concurrency:
 jobs:
   # Build job
   build:
-  runs-on: ubuntu-latest
-  defaults:
-    run:
-      working-directory: docs
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: docs
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -57,7 +54,7 @@ jobs:
         uses: actions/upload-pages-artifact@v1
         with:
           path: "docs/_site/"
-  
+
   # Deployment job
   deploy:
     environment:
