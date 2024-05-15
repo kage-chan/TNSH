@@ -1,4 +1,4 @@
-﻿---
+---
 layout: default
 title: Unlock system disk
 nav_enabled: true
