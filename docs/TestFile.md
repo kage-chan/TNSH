@@ -1,3 +1,9 @@
+---
+layout: default
+title: TestPage
+nav_enabled: true
+---
+
 # This is a test file
 
 ## With a few headings
