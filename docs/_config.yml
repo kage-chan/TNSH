@@ -4,5 +4,8 @@ theme: just-the-docs
 
 url: https://kage-chan.github.io/TNSH
 
+nav_enabled: true
+heading_anchors: true
+
 aux_links:
   Template Repository: https://github.com/just-the-docs/just-the-docs-template
