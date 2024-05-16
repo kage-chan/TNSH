@@ -7,5 +7,16 @@ url: https://kage-chan.github.io/TNSH
 nav_enabled: true
 heading_anchors: true
 
+callouts:
+  warning:
+    title: Warning
+    color: red
+  note:
+    title: note
+    color: blue
+  highlight:
+    title: highlight
+    color: yellow
+
 aux_links:
   TNSH on GitHub: https://github.com/kage-chan/TNSH
