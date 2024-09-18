@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# http://www.patorjk.com/software/taag/#p=display&c=echo&f=Shaded%20Blocky&t=TrueNAS%20SCALE
+# http://www.patorjk.com/software/taag/#p=display&c=echo&f=Rectangles&t=TrueNAS%20SCALE
 #  _____             _____ _____ _____    _____ _____ _____ __    _____ 
 # |_   _|___ _ _ ___|   | |  _  |   __|  |   __|     |  _  |  |  |   __|
 #   | | |  _| | | -_| | | |     |__   |  |__   |   --|     |  |__|   __|
