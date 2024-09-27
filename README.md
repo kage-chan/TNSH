@@ -35,7 +35,7 @@ Regardless of the mode your're running the TrueNAS SCALE Helper in, it will show
 ## 🔨 During TrueNAS SCALE install
 To install TrueNAS SCALE on a partition instead of the whole disk, the script offers a convenient "installer mode", which is only active if you start the script from the TrueNAS SCALE environment. To use the script, please choose "Shell" from the installer menu. In the shell, make sure that you have internet access and run the following code:
 ```
-curl -O https://raw.githubusercontent.com/kage-chan/HomeLab/main/TNSH/TNSH.sh
+curl -O https://github.com/kage-chan/TNSH/raw/refs/heads/main/TNSH.sh
 chmod +x TNSH.sh
 ./TNSH.sh
 ```
@@ -50,7 +50,7 @@ The script will detect the TrueNAS SCALE installer environment and prompt you. A
 ## 🏚️ After the install
 To use the script, simply download it and make it executable. The script MUST be run as root, since it does work with pretty important system settings.
 ```
-curl -O https://raw.githubusercontent.com/kage-chan/HomeLab/main/TNSH/TNSH.sh
+curl -O https://github.com/kage-chan/TNSH/raw/refs/heads/main/TNSH.sh
 chmod +x TNSH.sh
 sudo ./TNSH.sh
 ```
