@@ -39,6 +39,15 @@ curl -O https://github.com/kage-chan/TNSH/raw/refs/heads/main/TNSH.sh
 chmod +x TNSH.sh
 ./TNSH.sh
 ```
+
+Alternatively, if you trust URL-shorteners, feel free to use this shortened version of the URL:
+```
+curl -O https://tinyurl.com/muw36ara
+mv muw36ara TNSH.sh
+chmod +x TNSH.sh
+./TNSH.sh
+```
+
 The script will detect the TrueNAS SCALE installer environment and prompt you. After confirming, please choose the size of the partition for TrueNAS SCALE. You'll be guided back into the actual installer, where you can carry on with the install as usual.
 
 >[!CAUTION]
@@ -53,4 +62,12 @@ To use the script, simply download it and make it executable. The script MUST be
 curl -O https://github.com/kage-chan/TNSH/raw/refs/heads/main/TNSH.sh
 chmod +x TNSH.sh
 sudo ./TNSH.sh
+```
+
+Alternatively, if you trust URL-shorteners, feel free to use this shortened version of the URL:
+```
+curl -O https://tinyurl.com/muw36ara
+mv muw36ara TNSH.sh
+chmod +x TNSH.sh
+./TNSH.sh
 ```
