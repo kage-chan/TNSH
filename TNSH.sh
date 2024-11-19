@@ -15,15 +15,11 @@
 debug=false;
 
 # Global variables
-version="0.65"
+version="0.8"
 initExists=false
 initScript=""
 initScriptId=0
 configPower=false
-configDocker=false
-dockerExists=false
-dockerPath=""
-dockerCommand=""
 newPartition=""
 
 NO_FORMAT="\033[0m"
@@ -56,14 +52,6 @@ printHeader () {
 		if $configPower ; then
 			echo -n -e "${F_BOLD}${C_GOLD1}Power${NO_FORMAT}"
 		fi
-		if $configDocker ; then
-			echo -n -e " ${F_BOLD}${C_DODGERBLUE1}Docker${NO_FORMAT}"
-		fi
-		echo ""
-		
-		if $configDocker ; then
-			echo "  Docker container's path:" $dockerPath
-		fi
 	fi
 }
 
@@ -81,8 +69,7 @@ mainMenu () {
 	echo "";
 	echo "  Press p to show post-install menu";
 	echo "  Press 1 to optimize power settings";
-	echo "  Press 2 to install Docker, Portainer & Watchtower";
-	echo "  Press 3 to install HomeAssistant OS in a VM";
+	echo "  Press 2 to install HomeAssistant OS in a VM";
 	echo "  Press 0 to remove init script and revert changes";
 	echo "  Press r to recover previous install";
 	echo "  Press m to move the init script location";
@@ -101,10 +88,6 @@ mainMenu () {
 			break
 			;;
 		[2]*)
-			installDocker
-			break
-			;;
-		[3]*)
 			installHAOS
 			break
 			;;
@@ -283,472 +266,6 @@ optimizePower () {
 	
 	read -n 1 -p "  Press any key to return to the main menu"
 	mainMenu
-}
-
-#------------------------------------------------------------------------------
-# name: installDocker
-# args: none
-# Installs a systemd-nspawn container, optionally install docker & co inside
-#------------------------------------------------------------------------------
-installDocker () {
-	bridgeToUse=""
-	useExistingBridge=false
-	useBridge=true
-  
-	# First check if container already exists in default location
-	if $dockerExists ; then
-		# Check if container is running
-		$running=$(machinectl | grep dockerNspawn | wc -l)
-		if [ $var -ge 1 ] ; then
-			echo ""
-			echo "Docker already running";
-			read -p "  Aborting. Press Enter to return to main menu"
-			mainMenu
-		fi
-		
-		# What to do if it exists but is not running?
-	fi
-
-	# First, ask if user wants to use network bridge for docker container
-	while true; do
-		echo "";
-		echo "  If you want your docker container to have an own IP reachable from the hosts network";
-		read -n 1 -p "  it needs to use a network bridge. Do you want to use a network bridge? [Y/n]  " useBridge
-		
-		case $useBridge in
-		'')
-			useBridge=true
-			break
-			;;
-		[yY]*)
-			useBridge=true
-			break
-			;;
-		[nN]*)
-			useBridge=false
-			break
-			;;
-		*)
-			echo ""
-			echo "  Invalid selection. Please select yes or no."
-			continue
-		esac
-	done
-	
-	
-	# If a bridge network is to be used, get all current network interfaces
-	if $useBridge ; then
-		ifaces=$(ifconfig -s | tail -n +2)
-		interfaces=()
-		bridges=()
-		j=1
-		while read -ra dev; do
-			if $debug ; then
-				echo "  "$j".  "${dev[0]};
-			fi
-	
-			interfaces+=(${dev[0]})
-			
-			# Detect existing network bridges
-			if [[ ${dev[0]} == br[0-9]* ]] ; then
-				bridges+=(${dev[0]})
-				
-				if $debug ; then
-					echo "  Network bridge" ${dev[0]} "detected.";
-				fi
-			fi
-		
-			((j=j+1))
-		done <<< "$ifaces"
-	fi
-	
-	# USE EXISTING NETWORK BRIDGE
-	# if one is detected and user agrees to use it
-	if [ "${#bridges[@]}" -ge 1 ] && [ $useBridge ] ; then
-		while true; do
-			echo "";
-			echo "  Detected existing network bridge(s). Would you like to use one of the existing"
-			read -n 1 -p "  network bridge(s) with the docker container? [Y/n] " selectedInterface
-			
-			case $selectedInterface in
-			''|[yY]*)
-				# USE EXISTING BRIDGE
-				# If there is more than one bridge, let user choose bridge
-				if [ "${#bridges[@]}" -eq 1 ] ; then
-					echo "";
-					echo "  Detected only one bridge, will use" ${bridges[0]};
-					bridgeToUse=${bridges[0]}
-					break;
-				fi
-				
-				# If there is more than one bridge, let user choose bridge
-				echo "";
-				echo "  Available network bridges:";
-				echo "  0.  Abort";
-				j=1
-				for i in "${bridges[@]}"; do
-					echo "  "$j"."  $i;
-					((j=j+1))
-				done
-				
-				while true; do
-					read -n 1 -p "  Select network bridge to use: [0-"$((j-1))"] " selectedBridge
-		
-					# Check if input is numeric
-					re='^[0-9]'
-					if ! [[ $selectedDrive =~ $re ]] ; then
-						echo "";
-						echo "  Error: Not a number. Please try again.";
-						continue
-					fi
-
-					# Check if selection is higher than list length
-					if [ "$selectedDrive" -gt "${#devices[@]}" ] ; then
-						echo "  Error: Not a valid option"
-						continue
-					fi
-		
-					# Return to menu if user requested abort
-					if [[ "$selectedDrive" == 0 ]]; then
-						echo "";
-						echo "  Aborted";
-						read -p "  Press Enter to return to the main menu"
-						mainMenu
-					fi
-				
-					bridgeToUse=${bridges[(($selectedBridge-1))]}
-					useExistingBridge=true
-					break
-				done
-				break
-				;;
-			[nN]*)
-				break
-				;;
-			*)
-				echo ""
-				echo "  Invalid selection. Please select yes or no."
-				continue
-			esac
-		done
-	fi
-	
-	# CREATE NEW NETWORK BRIDGE
-	# If no bridge was detected or user does not want to use existing bridge
-	echo ""
-	if [ -z $bridgeToUse ] && [ $useBridge == true ] ; then
-		while true; do
-			echo "  To create a new network bridge, you must tell the script through which interface"
-			echo "  you currently are connected to the host network."
-			echo "";
-			echo "  0.  Abort";
-			
-			j=1
-			for i in "${interfaces[@]}"; do
-				echo "  "$j". "  $i;
-				((j=j+1))
-			done
-			
-			read -n 1 -p "  Select network interface currently in use: [0-"$((j-1))"] " selectedInterface
-			
-			# Check if input is numeric
-			re='^[0-9]'
-			if ! [[ $selectedInterface =~ $re ]] ; then
-				echo "";
-				echo "  Error: Not a number. Please try again.";
-				continue
-			fi
-
-			# Check if selection is higher than list length
-			if [ "$selectedInterface" -gt "${#interfaces[@]}" ] ; then
-				echo "  Error: Not a valid option"
-				continue
-			fi
-			
-			# Return to menu if user requested abort
-			if [[ "$selectedInterface" == 0 ]]; then
-				echo "";
-				echo "  Aborted";
-				read -p "  Press any key to return to the main menu"
-				mainMenu
-			fi
-			
-			# TODO Check if selected interface is already member of other bridge
-			
-			break
-		done
-		
-		# Find next free network bridge name (br[0-9]*). If no bridge was found
-		# we don't need to do anything, since the default (defined above) name
-		# for the bridge "br0" will be used
-		if [ "${#bridges[@]}" == 0 ] ; then
-			bridgeToUse="br0"
-		fi
-		
-		if [ "${#devices[@]}" -ge 1 ] ; then
-			# Search with awk '{for(i=p+1; i<$1; i++) print i} {p=$1}' file
-			# TODO
-			echo ""
-		fi
-		
-		# Create the new network bridge if required
-		cli -c "network interface update \""${interfaces[(($selectedInterface-1))]}"\" ipv4_dhcp=false"
-		cli -c "network interface create name=\""$bridgeToUse"\" type=BRIDGE bridge_members=\""${interfaces[(($selectedInterface-1))]}"\" ipv4_dhcp=true"
-		cli -c "network interface commit"
-		cli -c "network interface checkin"
-	fi
-  
-	# Check if services partition exists and suggest placing container there
-	if test -d /mnt/services ; then
-		echo "";
-		echo "  TNSH-services partition detected. The suggested location for the container is";
-		echo "  /mnt/services/dockerNspawn. It is recommended to use this location, since it does";
-		echo "  ensure that the container will also survive TrueNAS SCALE updates.";
-		
-		read -n 1 -p "  Do you want to place the script in the suggested location? [Y/n]  " suggestedLocation
-  		
-		case $suggestedLocation in
-		''|[yY]*)
-			dockerPath="/mnt/services/dockerNspawn"
-			;;
-		[nN]*)
-			choosePath=true
-			;;
-		*)
-			echo "  Invalid choice. Please try again";
-		esac
-	fi
-  
-	# Create systemd-nspawn "container" (ask user which filesystems to "import" there?)
-	
-	if $choosePath ; then
-		while true; do
-			echo " ";
-			read -p "  Please specify directory to use for the container: " pathForContainer
-			
-			if [[ -z "$pathForContainer" ]] ; then
-				echo ""
-				echo "  Please specify a valid absolute path!";
-				echo ""
-				continue
-			fi
-			
-			if [[ $pathForContainer != /* ]] ; then
-				echo ""
-				echo "  Please specify a valid absolute path!";
-				echo ""
-				continue
-			fi
-			
-			if [[ ! -d "$pathForContainer" ]] ; then
-				echo "";
-				echo "  Directory does not exist. Creating.";
-				echo "";
-			fi
-			
-			dockerPath=$pathForContainer
-			break
-		done
-		
-		if [[ $pathForContainer != /mnt/* ]] ; then
-			echo "";
-			echo "  Path is inside a system dataset.";
-			echo "  The container might be damaged or removed during future TrueNAS SCALE updates.";
-			echo "  Please be aware of this and periodically backup your container.";
-			echo "";
-			
-			if [[ $pathForContainer == */ ]] ; then
-				dockerPath=$pathForContainer
-			else
-				dockerPath=$pathForContainer"/"
-			fi
-			break
-		fi
-	fi
-	
-	# TODO
-	# If folder exists, check if it contains a container and if it can be reconstructed
-	#if [[ -d "$pathForContainer" ]] ; THEN
-	#fi
-	
-	echo "  Searching for pools now ..."
-	
-	pls=$(cli -c "storage pool query" | tail -n +4 | head -n -1)
-
-	if $debug ; then
-			echo "  Query returned the following pool(s): ";
-			echo "$pls"
-	fi
-
-	pools=()
-	paths=()
-	while read -ra pool; do
-			j=1
-			for i in "${pool[@]}" ; do
-					if [ $j -eq 4 ] ; then
-							if $debug ; then
-									echo -n "  Pool name is" $i;
-							fi
-							pools+=($i)
-					fi
-					if [ $j -eq 8 ] ; then
-							if $debug ; then
-									echo " with path" $i;
-							fi
-							paths+=($i)
-					fi
-					((j=j+1))
-			done
-	done <<< "$pls"
-	
-	echo ""
-	echo "  Found a total of ${#pools} pools."
-	echo ""
-	
-	while true; do
-		read -n 1 -p "  Would you like to bind one ore more of them to the container? [Y/n]  " bindPools
-  		
-		case $bindPools in
-		''|[yY]*)
-			bindPools=true
-			break
-			;;
-		[nN]*)
-			bindPools=false
-			break
-			;;
-		*)
-			echo "  Invalid choice. Please try again";
-		esac
-	done
-	
-	if $bindPools ; then
-		echo ""
-		echo "  0.  None";
-		
-		for i in $(seq 1 "${#pools[@]}") ; do
-			echo "  "$i". "${pools[$(($i-1))]};
-		done
-		
-		read -n 1 -p "  Which of the pools would you like to bind to the container? [0-${#pools[@]}]  " poolToBind
-  		
-		poolToBind=${paths[$(($poolToBind-1))]}
-		echo "";
-	fi
-	
-	# Install docker inside the container (ask if portainer + watchtower)
-	if ! $dockerExists ; then
-		mkdir -p $dockerPath
-	fi
-	cd $dockerPath
-	# A kind thank you to the nspawn team for letting me use this link in this script
-	wget https://hub.nspawn.org/storage/debian/bookworm/tar/image.tar.xz
-	#cp /mnt/services/image.tar.xz ./
-	mkdir rootfs
-	tar -xf image.tar.xz -C rootfs
-	rm rootfs/etc/machine-id
-	rm rootfs/etc/resolv.conf
-	touch rootfs/etc/securetty
-	for i in $(seq 0 10); do
-		echo "pts/"$i >> rootfs/etc/securetty
-	done
-	
-	command="systemd-run --property=KillMode=mixed --property=Type=notify --property=RestartForceExitStatus=133 --property=SuccessExitStatus=133 --property=Delegate=yes --property=TasksMax=infinity --collect --setenv=SYSTEMD_NSPAWN_LOCK=0 --unit=dockerNspawn --working-directory="$dockerPath" '--description=systemd-nspawn container creates by TNSH to run docker' --setenv=SYSTEMD_SECCOMP=0 --property=DevicePolicy=auto -- systemd-nspawn --keep-unit --quiet --boot --machine=dockerNspawn --directory=rootfs --capability=all '--system-call-filter=add_key keyctl bpf'"
-	if $useBridge ; then
-		command="$command --network-bridge=br0 --resolv-conf=bind-host"
-	fi
-	if $bindPools ; then
-		command="$command --bind='$poolToBind:$poolToBind'"
-	fi
-	
-	eval "$command"
-	
-	echo "  Waiting for container to start and network connection to be configured"
-	echo -n "  30s..."
-	sleep 5
-	echo -n "  25s..."
-	sleep 5
-	echo -n "  20s..."
-	sleep 5
-	echo -n "  15s..."
-	sleep 5
-	echo -n "  10s..."
-	sleep 1
-	echo -n "  9s..."
-	sleep 1
-	echo -n "  8s..."
-	sleep 1
-	echo -n "  7s..."
-	sleep 1
-	echo -n "  6s..."
-	sleep 1
-	echo -n "  5s..."
-	sleep 1
-	echo -n "  4s..."
-	sleep 1
-	echo -n "  3s..."
-	sleep 1
-	echo -n "  2s..."
-	sleep 1
-	echo -n "  1s..."
-	sleep 1
-	
-	
-	# Install docker inside container
-	machinectl shell dockerNspawn /usr/bin/apt update
-	machinectl shell dockerNspawn /usr/bin/apt install -y ca-certificates curl
-	machinectl shell dockerNspawn /bin/install -m 0775 -d /etc/apt/keyrings
-	machinectl shell dockerNspawn /bin/curl -fsSL https://download.docker.com/linux/debian/gpg -o /etc/apt/keyrings/docker.asc
-	machinectl shell dockerNspawn /bin/chmod a+r /etc/apt/keyrings/docker.asc
-
-	echo "deb [arch=amd64 signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/debian bookworm stable" > rootfs/etc/apt/sources.list.d/docker.list
-	machinectl shell dockerNspawn /usr/bin/apt update
-	machinectl shell dockerNspawn /usr/bin/apt install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
-	
-	# Install watchtower if users agrees
-	while true; do
-		echo "";
-		read -n 1 -p "  Install watchtower? [Y/n]  " installWatchtower
-		
-		case $installWatchtower in
-		''|[yY]*)
-			machinectl shell dockerNspawn /usr/bin/docker run --detach --name watchtower --volume /var/run/docker.sock:/var/run/docker.sock containrrr/watchtower
-			break
-			;;
-		[nN]*)
-			break
-			;;
-		*)
-			echo ""
-			echo "  Invalid selection. Please select yes or no."
-			continue
-		esac
-	done
-	
-	# Install portainer if users agrees
-	while true; do
-		echo "";
-		read -n 1 -p "  Install portainer? [Y/n]  " installWatchtower
-		
-		case $installWatchtower in
-		''|[yY]*)
-			machinectl shell dockerNspawn /usr/bin/docker volume create portainer_data
-			machinectl shell dockerNspawn /usr/bin/docker run -d -p 8000:8000 -p 9443:9443 --name portainer --restart=always -v /var/run/docker.sock:/var/run/docker.sock -v portainer_data:/data portainer/portainer-ce:latest
-			break
-			;;
-		[nN]*)
-			break
-			;;
-		*)
-			echo ""
-			echo "  Invalid selection. Please select yes or no."
-			continue
-		esac
-	done
-	
-	# Add code to init script that starts container at boot post init
-	dockerCommand=$command
-	buildInitScript DOCKER 
 }
 
 
@@ -1172,41 +689,10 @@ readInitConfig () {
 				fi
 				configPower=true
 				;;
-			[DOCKER]*)
-				if $debug ; then
-					echo "  Docker configured in init script"
-				fi
-				configDocker=true
-				;;
-			/*)
-				if $debug ; then
-					echo "  Docker rootfs path is:" $i
-				fi
-				
-				if [ -d $i ] ; then
-					dockerExists=true
-				fi
-				
-				dockerPath=$i
-				;;
 			*)
 			esac
 		done
 	fi
-}
-
-
-#------------------------------------------------------------------------------
-# name: getDockerConfig
-# args: none
-# Gets current configuration of the docker install like bridge, binds etc.
-# note: will store extracted config in global variables
-#------------------------------------------------------------------------------
-getDockerConfig () {
-	# Check if docker config file exists
-	# If it exists, "read" config file.
-	# If it does not exist, attempt to build one?
-	echo "";
 }
 
 
@@ -1308,9 +794,6 @@ buildInitScript () {
 	[POWER]*)
 		configPower=true
 		;;
-	[DOCKER]*)
-		configDocker=true
-		;;
 	*)
 	esac
 	
@@ -1322,11 +805,6 @@ buildInitScript () {
 	
 	if $configPower == true ; then
 		echo -n " POWER" >> $initScript;
-	fi
-	
-	if $configDocker == true ; then
-		echo -n " DOCKER" >> $initScript;
-		echo -n " "$dockerPath >> $initScript;
 	fi
 	
 	echo ""
@@ -1351,14 +829,6 @@ buildInitScript () {
 		echo "# Powermanagement"  >> $initScript;
 		echo "powertop --auto-tune"  >> $initScript;
 		echo "echo powersave > /sys/module/pcie_aspm/parameters/policy"  >> $initScript;
-	fi
-	
-	if $configDocker == true; then
-		echo ""  >> $initScript;
-		echo "# Docker container"  >> $initScript;
-		echo $dockerCommand >> $initScript;
-		echo ""  >> $initScript;
-		echo ""  >> $initScript;
 	fi
 	
 	# Enable init script
