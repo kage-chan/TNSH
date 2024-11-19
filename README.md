@@ -33,7 +33,7 @@ Regardless of the mode your're running the TrueNAS SCALE Helper in, it will show
 >Although not strictly neccessary, it is recommended to run the script directly on the machine instead of using ssh. For most commands this does not pose a problem, but especially when creating a container for docker network settings are being messed with. These changes in network settings will likely cut your network connection to the machine, at least temporarily. Therefore, if possible try to run it on the machine directly or at least have means to find the new IP of the machine in case the network configuration changes!
 
 ## 🔨 During TrueNAS SCALE install
-To install TrueNAS SCALE on a partition instead of the whole disk, the script offers a convenient "installer mode", which is only active if you start the script from the TrueNAS SCALE environment. To use the script, please choose "Shell" from the installer menu. In the shell, make sure that you have internet access and run the following code:
+To install TrueNAS SCALE on a partition instead of the whole disk, the script offers a convenient "installer mode", which is only active if you start the script from the TrueNAS SCALE environment. To use the script, please choose "Shell" from the installer menu. In the shell, make sure that you have internet access (if not, check below) and run the following code:
 ```
 curl -O https://github.com/kage-chan/TNSH/raw/refs/heads/main/TNSH.sh
 chmod +x TNSH.sh
@@ -42,13 +42,21 @@ chmod +x TNSH.sh
 
 Alternatively, if you trust URL-shorteners, feel free to use this shortened version of the URL:
 ```
-curl -O https://tinyurl.com/muw36ara
-mv muw36ara TNSH.sh
+curl -o TNSH.sh -OL https://tinyurl.com/muw36ara
 chmod +x TNSH.sh
 ./TNSH.sh
 ```
 
 The script will detect the TrueNAS SCALE installer environment and prompt you. After confirming, please choose the size of the partition for TrueNAS SCALE. You'll be guided back into the actual installer, where you can carry on with the install as usual.
+
+### Should you have no internet connection
+On all my machines I tested 24.10, the installer wasn't able to correctly resolve domain names, it seems like it ignored the DNS server supplied by the DHCP server. To fix this, open `/etc/resolve.conf` with vi and add the following line:
+```
+nameserver 1.1.1.1
+```
+
+This will use cloudflare to resolve domain names during the install. Alternatively use the DNS server of your liking.
+
 
 >[!CAUTION]
 >Please make sure the partition size you choose is smaller than the disk's size, otherwise the install will fail. In that case, just reboot from the installer stick and retry. **The script does not check this at the current stage!**
@@ -66,8 +74,7 @@ sudo ./TNSH.sh
 
 Alternatively, if you trust URL-shorteners, feel free to use this shortened version of the URL:
 ```
-curl -O https://tinyurl.com/muw36ara
-mv muw36ara TNSH.sh
+curl -o TNSH.sh -OL https://tinyurl.com/muw36ara
 chmod +x TNSH.sh
 ./TNSH.sh
 ```
