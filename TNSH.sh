@@ -215,8 +215,8 @@ installModeMenu () {
 		esac
 	done
 	
-	sed -i 's/sgdisk -n3:0:0/sgdisk -n3:0:+'$size'/g' /usr/sbin/truenas-install /usr/sbin/truenas-install
-	/usr/sbin/truenas-install
+	sed -i 's/"sgdisk", "-n3:0:0"/"sgdisk", "-n3:0:+'$size'"/g' lib/python3/dist-packages/truenas_installer/install.py lib/python3/dist-packages/truenas_installer/install.py
+	/usr/bin/python3 -m truenas_installer
 	exit
 }
 
