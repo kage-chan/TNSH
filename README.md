@@ -11,20 +11,20 @@
 
 
 ## ❓ Why?
-TrueNAS SCALE has a few shortcomings for home users with highly efficient, low idle power servers. For example, TrueNAS SCALE will always block all space on the boot drive, it cannot be used for other things. The power management also leaves a lot to be desired of you want to minimize idle power. K3s (backend used for containers in TrueNAS SCALE) causes a considerable permanent load on the CPU, even without containers running. This prevents the CPU from entering higher c states (it's not a bug, it's a feature... that's what the devs say). All these things added up, so I wanted to have a few things changed in my TrueNAS SCALE installation. To document and make things easier for future me, I've made a script to help me. Feel free to use it, but be sure that
-YOU ARE OUTSIDE WHAT iX-System DOES SUPPORT, SO YOU WILL BE ON YOUR OWN! And please, always always always back up your data.
+TrueNAS SCALE has a few shortcomings for home users with highly efficient, low idle power servers. For example, TrueNAS SCALE will always block all space on the boot drive, it cannot be used for other things. The power management also leaves a lot to be desired of you want to minimize idle power. It will also automatically instal HomeAssistant for you in a VM. All these things added up, so I wanted to have a few things changed in my TrueNAS SCALE installation. To document and make things easier for future me, I've made a script to help me. Feel free to use it, but be sure that
+YOU ARE OUTSIDE WHAT iX-System DOES OFFICIALLY SUPPORT, SO YOU WILL BE ON YOUR OWN! And please, always always always back up your data.
 Why shell script you ask? I've never really done anything "serious" with shell scripts, so I am trying to learn shell scripting along this project. Should you spot anything that is utterly wrong or has room for improvement, open up that issue and tell me! 👍
 
 ## ✅ Things the script can do
 With the disclaimer out of the way, here's what the script can do fo you:
 - confine TrueNAS SCALE to size-adjustable partition and make rest of the disk available
 - optimize power management (temporarily and permanently)
-- install a basic docker environment with portainer to manage containers
 - install HAOS in a VM for you
 
 ## ❌ Things the script can't do
-- make system disk's space available when you've already installed TrueNAS SCALE
-- you will not be able to use TrueNAS SCALE's UI to manage Apps/Containers
+- make system disk's space available when you've already installed TrueNAS SCALE. You will need to reinstall TrueNAS SCALE.
+
+Reinstalling TrueNAs SCALE actually sounds a lot scarier that it actually is. Did you know that installing a major update in TrueNAS SCALE is basically the same as a reinstall? Reinstalling TrueNAS SCALE is as easy as downloading the config, reinstalling and reapplying the configuration by simply uploading the text file you've downloaded before. Check out [https://www.danielketel.com/easily-unblocking-truenas-scales-hidden-system-drive-space/](the article I've written on this), it'll give you a step-by-step tutorial.
 
 # ⛏️ Usage
 Regardless of the mode your're running the TrueNAS SCALE Helper in, it will show you a menu and guide you through all steps as neccessary. But, the script still is in it's very early stages, there might still be rought edges around here and there. I strongly encourage you to open an issue should you spot something 😊
@@ -35,7 +35,7 @@ Regardless of the mode your're running the TrueNAS SCALE Helper in, it will show
 ## 🔨 During TrueNAS SCALE install
 To install TrueNAS SCALE on a partition instead of the whole disk, the script offers a convenient "installer mode", which is only active if you start the script from the TrueNAS SCALE environment. To use the script, please choose "Shell" from the installer menu. In the shell, make sure that you have internet access (if not, check below) and run the following code:
 ```
-curl -O https://github.com/kage-chan/TNSH/raw/refs/heads/main/TNSH.sh
+curl -O https://raw.githubusercontent.com/kage-chan/TNSH/refs/heads/main/TNSH.sh
 chmod +x TNSH.sh
 ./TNSH.sh
 ```
@@ -67,7 +67,7 @@ This will use cloudflare to resolve domain names during the install. Alternative
 ## 🏚️ After the install
 To use the script, simply download it and make it executable. The script MUST be run as root, since it does work with pretty important system settings.
 ```
-curl -O https://github.com/kage-chan/TNSH/raw/refs/heads/main/TNSH.sh
+curl -O https://raw.githubusercontent.com/kage-chan/TNSH/refs/heads/main/TNSH.sh
 chmod +x TNSH.sh
 sudo ./TNSH.sh
 ```
